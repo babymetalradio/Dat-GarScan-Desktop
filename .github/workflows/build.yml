@@ -17,11 +17,6 @@ jobs:
         include:
           - platform: windows-latest
             args: "--target x86_64-pc-windows-msvc"
-          # Descomenta cuando quieras builds de macOS/Linux:
-          # - platform: macos-latest
-          #   args: "--target aarch64-apple-darwin"
-          # - platform: ubuntu-22.04
-          #   args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -34,24 +29,23 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies (Ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        with:
+          targets: x86_64-pc-windows-msvc
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci || npm install
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Dat-Gar Scan ${{ github.ref_name }}"
-          releaseBody: "Versión de escritorio de Dat-Gar Scan."
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
+          releaseName: "Dat-Gar Scan ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}"
+          releaseBody: |
+            Versión de escritorio de Dat-Gar Scan.
+
+            **Requisito en Windows:** [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) (normalmente ya viene en Windows 10/11).
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

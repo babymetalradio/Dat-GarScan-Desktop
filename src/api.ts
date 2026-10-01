@@ -1,5 +1,3 @@
-import { fetch } from "@tauri-apps/plugin-http";
-
 const SITE_URL = "https://datgarscanlation.xyz/";
 
 export interface MangaResumen {
@@ -56,9 +54,19 @@ export interface CapituloPaginas {
   tiene_sorpresa: boolean;
 }
 
+/** Usa plugin-http de Tauri si está disponible; si no, fetch nativo. */
+async function doFetch(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    const mod = await import("@tauri-apps/plugin-http");
+    return await mod.fetch(url, options);
+  } catch {
+    return await fetch(url, options);
+  }
+}
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = path.startsWith("http") ? path : `${SITE_URL}${path}`;
-  const res = await fetch(url, {
+  const res = await doFetch(url, {
     ...options,
     headers: {
       Accept: "application/json",
@@ -86,9 +94,11 @@ export async function listarMangas(q?: string): Promise<MangaResumen[]> {
 }
 
 export async function obtenerDetalle(slug: string): Promise<MangaDetalle> {
-  const data = await apiFetch<{ success: boolean; data: MangaDetalle; message?: string }>(
-    `api/manga_detalle.php?slug=${encodeURIComponent(slug)}`
-  );
+  const data = await apiFetch<{
+    success: boolean;
+    data: MangaDetalle;
+    message?: string;
+  }>(`api/manga_detalle.php?slug=${encodeURIComponent(slug)}`);
   if (!data.success || !data.data) {
     throw new Error(data.message || "No se pudo cargar el detalle");
   }
@@ -96,9 +106,11 @@ export async function obtenerDetalle(slug: string): Promise<MangaDetalle> {
 }
 
 export async function obtenerCapitulo(id: number): Promise<CapituloPaginas> {
-  const data = await apiFetch<{ success: boolean; data: CapituloPaginas; message?: string }>(
-    `api/capitulo.php?id=${id}`
-  );
+  const data = await apiFetch<{
+    success: boolean;
+    data: CapituloPaginas;
+    message?: string;
+  }>(`api/capitulo.php?id=${id}`);
   if (!data.success || !data.data) {
     throw new Error(data.message || "No se pudo cargar el capítulo");
   }

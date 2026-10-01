@@ -5,9 +5,40 @@
     <link rel="icon" type="image/png" href="/icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dat-Gar Scan</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0f0f12;
+        color: #f0f0f5;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      #boot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 12px;
+      }
+      #boot .spin {
+        width: 36px;
+        height: 36px;
+        border: 3px solid #2a2a36;
+        border-top-color: #ff6b9d;
+        border-radius: 50%;
+        animation: s 0.8s linear infinite;
+      }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot">
+        <div class="spin"></div>
+        <p>Cargando Dat-Gar Scan…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
