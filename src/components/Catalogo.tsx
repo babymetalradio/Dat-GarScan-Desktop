@@ -2,9 +2,10 @@ import type { MangaResumen } from "../api";
 
 interface Props {
   mangas: MangaResumen[];
+  onSelect: (slug: string) => void;
 }
 
-export default function Catalogo({ mangas }: Props) {
+export default function Catalogo({ mangas, onSelect }: Props) {
   if (mangas.length === 0) {
     return (
       <div className="estado">
@@ -16,7 +17,17 @@ export default function Catalogo({ mangas }: Props) {
   return (
     <div className="catalogo">
       {mangas.map((m) => (
-        <article key={m.id} className="manga-card" title={m.title}>
+        <article
+          key={m.id}
+          className="manga-card"
+          title={m.title}
+          onClick={() => onSelect(m.slug)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") onSelect(m.slug);
+          }}
+        >
           <div className="cover-wrap">
             {m.cover_url ? (
               <img
