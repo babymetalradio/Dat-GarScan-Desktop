@@ -18,7 +18,8 @@ function App() {
   const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    cargarCatalogo();
+    const t = window.setTimeout(() => cargarCatalogo(), 0);
+    return () => clearTimeout(t);
   }, []);
 
   async function cargarCatalogo(q?: string) {
@@ -28,7 +29,9 @@ function App() {
       const data = await listarMangas(q);
       setMangas(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar el catálogo");
+      setError(
+        e instanceof Error ? e.message : "Error al cargar el catálogo"
+      );
     } finally {
       setCargando(false);
     }
@@ -82,6 +85,9 @@ function App() {
               <div className="estado">
                 <div className="spinner" />
                 <p>Cargando catálogo...</p>
+                <p className="estado-hint">
+                  Si tarda más de 15 s, revisa tu conexión.
+                </p>
               </div>
             )}
             {error && !cargando && (

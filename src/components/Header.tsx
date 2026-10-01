@@ -21,7 +21,7 @@ export default function Header({
         ) : (
           <>
             <span className="logo">🐾 Dat-Gar Scan</span>
-            <span className="badge">v0.3.0</span>
+            <span className="badge">v0.3.1</span>
           </>
         )}
       </div>

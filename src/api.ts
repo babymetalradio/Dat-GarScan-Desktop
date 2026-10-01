@@ -1,4 +1,5 @@
 const SITE_URL = "https://datgarscanlation.xyz/";
+const TIMEOUT_MS = 15000;
 
 export interface MangaResumen {
   id: number;
@@ -54,14 +55,62 @@ export interface CapituloPaginas {
   tiene_sorpresa: boolean;
 }
 
-/** Usa plugin-http de Tauri si está disponible; si no, fetch nativo. */
-async function doFetch(url: string, options?: RequestInit): Promise<Response> {
-  try {
-    const mod = await import("@tauri-apps/plugin-http");
-    return await mod.fetch(url, options);
-  } catch {
-    return await fetch(url, options);
+let tauriFetch: typeof fetch | null = null;
+let tauriFetchTried = false;
+
+async function getFetch(): Promise<typeof fetch> {
+  if (tauriFetch) return tauriFetch;
+  if (!tauriFetchTried) {
+    tauriFetchTried = true;
+    try {
+      const mod = await Promise.race([
+        import("@tauri-apps/plugin-http"),
+        new Promise<never>((_, rej) =>
+          setTimeout(() => rej(new Error("timeout plugin-http")), 3000)
+        ),
+      ]);
+      tauriFetch = mod.fetch as unknown as typeof fetch;
+    } catch {
+      tauriFetch = null;
+    }
   }
+  return tauriFetch ?? fetch.bind(globalThis);
+}
+
+async function doFetch(url: string, options?: RequestInit): Promise<Response> {
+  const f = await getFetch();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  // Merge abort signals if caller provided one
+  const signal = options?.signal
+    ? anySignal([options.signal, controller.signal])
+    : controller.signal;
+
+  try {
+    return await f(url, { ...options, signal });
+  } catch (e) {
+    if (e instanceof Error && e.name === "AbortError") {
+      throw new Error(
+        "La conexión tardó demasiado. Revisa tu internet o el servidor."
+      );
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function anySignal(signals: AbortSignal[]): AbortSignal {
+  const c = new AbortController();
+  for (const s of signals) {
+    if (s.aborted) {
+      c.abort();
+      return c.signal;
+    }
+    s.addEventListener("abort", () => c.abort(), { once: true });
+  }
+  return c.signal;
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {

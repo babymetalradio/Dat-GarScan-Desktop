@@ -580,3 +580,9 @@ body {
   background: rgba(255, 107, 157, 0.15);
   color: var(--accent-hover);
 }
+
+.estado-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
