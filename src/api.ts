@@ -1,3 +1,5 @@
+import { fetch } from "@tauri-apps/plugin-http";
+
 const SITE_URL = "https://datgarscanlation.xyz/";
 
 export interface MangaResumen {
