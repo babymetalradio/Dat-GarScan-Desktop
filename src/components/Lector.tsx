@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { obtenerCapitulo, type CapituloPaginas } from "../api";
+import { obtenerCapitulo, guardarProgreso, type CapituloPaginas } from "../api";
+import { getToken } from "../sesion";
 
 type Modo = "simple" | "doble" | "tira";
 
@@ -49,6 +50,16 @@ export default function Lector({
       cancelado = true;
     };
   }, [chapterId]);
+
+  // Guardar progreso si hay sesión
+  useEffect(() => {
+    if (!cap || !getToken()) return;
+    const page = Math.max(1, pagina + 1);
+    const t = window.setTimeout(() => {
+      void guardarProgreso(cap.manga_id, cap.id, page);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [cap, pagina]);
 
   const total = cap?.pages.length ?? 0;
   const step = modo === "doble" ? 2 : 1;

@@ -3,6 +3,11 @@ interface Props {
   onBuscar: (texto: string) => void;
   mostrarBusqueda?: boolean;
   onVolver?: () => void;
+  seccion?: "catalogo" | "favoritos" | "historial";
+  onSeccion?: (s: "catalogo" | "favoritos" | "historial") => void;
+  username?: string | null;
+  onLoginClick?: () => void;
+  onLogout?: () => void;
 }
 
 export default function Header({
@@ -10,6 +15,11 @@ export default function Header({
   onBuscar,
   mostrarBusqueda = true,
   onVolver,
+  seccion = "catalogo",
+  onSeccion,
+  username,
+  onLoginClick,
+  onLogout,
 }: Props) {
   return (
     <header className="header">
@@ -21,11 +31,35 @@ export default function Header({
         ) : (
           <>
             <span className="logo">🐾 Dat-Gar Scan</span>
-            <span className="badge">v0.3.1</span>
+            <span className="badge">v0.4.0</span>
           </>
         )}
       </div>
-      {mostrarBusqueda && (
+
+      {!onVolver && onSeccion && (
+        <nav className="header-nav">
+          <button
+            className={`nav-btn ${seccion === "catalogo" ? "activo" : ""}`}
+            onClick={() => onSeccion("catalogo")}
+          >
+            Catálogo
+          </button>
+          <button
+            className={`nav-btn ${seccion === "favoritos" ? "activo" : ""}`}
+            onClick={() => onSeccion("favoritos")}
+          >
+            Favoritos
+          </button>
+          <button
+            className={`nav-btn ${seccion === "historial" ? "activo" : ""}`}
+            onClick={() => onSeccion("historial")}
+          >
+            Historial
+          </button>
+        </nav>
+      )}
+
+      {mostrarBusqueda && seccion === "catalogo" && (
         <div className="header-center">
           <input
             type="search"
@@ -36,10 +70,20 @@ export default function Header({
           />
         </div>
       )}
+
       <div className="header-right">
-        <button className="btn-ghost" title="Próximamente">
-          Iniciar sesión
-        </button>
+        {username ? (
+          <div className="user-menu">
+            <span className="user-name">@{username}</span>
+            <button className="btn-ghost btn-sm" onClick={onLogout}>
+              Salir
+            </button>
+          </div>
+        ) : (
+          <button className="btn-ghost" onClick={onLoginClick}>
+            Iniciar sesión
+          </button>
+        )}
       </div>
     </header>
   );

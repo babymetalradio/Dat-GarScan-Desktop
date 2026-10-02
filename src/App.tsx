@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
 import { listarMangas, type MangaResumen } from "./api";
+import { cargarSesion, cerrarSesion, type Sesion } from "./sesion";
 import Catalogo from "./components/Catalogo";
 import Detalle from "./components/Detalle";
+import Favoritos from "./components/Favoritos";
 import Header from "./components/Header";
+import Historial from "./components/Historial";
 import Lector from "./components/Lector";
+import Login from "./components/Login";
 
-type Vista = "catalogo" | "detalle" | "lector";
+type Vista = "catalogo" | "detalle" | "lector" | "favoritos" | "historial";
 
 function App() {
   const [vista, setVista] = useState<Vista>("catalogo");
   const [slugSeleccionado, setSlugSeleccionado] = useState<string | null>(null);
   const [chapterId, setChapterId] = useState<number | null>(null);
+  const [sesion, setSesion] = useState<Sesion | null>(() => cargarSesion());
+  const [mostrarLogin, setMostrarLogin] = useState(false);
 
   const [mangas, setMangas] = useState<MangaResumen[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -66,7 +72,24 @@ function App() {
     setVista("lector");
   }
 
+  function irSeccion(s: "catalogo" | "favoritos" | "historial") {
+    setSlugSeleccionado(null);
+    setChapterId(null);
+    setVista(s);
+  }
+
+  function onLogout() {
+    cerrarSesion();
+    setSesion(null);
+  }
+
   const enLector = vista === "lector";
+  const seccionHeader =
+    vista === "favoritos"
+      ? "favoritos"
+      : vista === "historial"
+        ? "historial"
+        : "catalogo";
 
   return (
     <div className={`app ${enLector ? "app-lector" : ""}`}>
@@ -76,6 +99,11 @@ function App() {
           busqueda={busqueda}
           mostrarBusqueda={vista === "catalogo"}
           onVolver={vista === "detalle" ? volverCatalogo : undefined}
+          seccion={seccionHeader}
+          onSeccion={vista !== "detalle" ? irSeccion : undefined}
+          username={sesion?.username ?? null}
+          onLoginClick={() => setMostrarLogin(true)}
+          onLogout={onLogout}
         />
       )}
       <main className={`main ${enLector ? "main-lector" : ""}`}>
@@ -104,11 +132,29 @@ function App() {
           </>
         )}
 
+        {vista === "favoritos" && (
+          <Favoritos
+            logueado={!!sesion}
+            onSelect={abrirDetalle}
+            onLogin={() => setMostrarLogin(true)}
+          />
+        )}
+
+        {vista === "historial" && (
+          <Historial
+            logueado={!!sesion}
+            onSelectManga={abrirDetalle}
+            onAbrirCapitulo={abrirCapitulo}
+            onLogin={() => setMostrarLogin(true)}
+          />
+        )}
+
         {vista === "detalle" && slugSeleccionado && (
           <Detalle
             slug={slugSeleccionado}
             onVolver={volverCatalogo}
             onAbrirCapitulo={abrirCapitulo}
+            onPedirLogin={() => setMostrarLogin(true)}
           />
         )}
 
@@ -120,6 +166,17 @@ function App() {
           />
         )}
       </main>
+
+      {mostrarLogin && (
+        <Login
+          onCerrar={() => setMostrarLogin(false)}
+          onExito={(username) => {
+            setSesion(cargarSesion());
+            setMostrarLogin(false);
+            void username;
+          }}
+        />
+      )}
     </div>
   );
 }

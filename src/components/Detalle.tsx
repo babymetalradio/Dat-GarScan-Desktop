@@ -1,17 +1,29 @@
 import { useEffect, useState } from "react";
-import { obtenerDetalle, type MangaDetalle } from "../api";
+import {
+  alternarFavorito,
+  obtenerDetalle,
+  type MangaDetalle,
+} from "../api";
+import { cargarSesion } from "../sesion";
 
 interface Props {
   slug: string;
   onVolver: () => void;
   onAbrirCapitulo?: (chapterId: number) => void;
+  onPedirLogin?: () => void;
 }
 
-export default function Detalle({ slug, onVolver, onAbrirCapitulo }: Props) {
+export default function Detalle({
+  slug,
+  onVolver,
+  onAbrirCapitulo,
+  onPedirLogin,
+}: Props) {
   const [detalle, setDetalle] = useState<MangaDetalle | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ordenAsc, setOrdenAsc] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -23,7 +35,9 @@ export default function Detalle({ slug, onVolver, onAbrirCapitulo }: Props) {
         if (!cancelado) setDetalle(data);
       } catch (e) {
         if (!cancelado) {
-          setError(e instanceof Error ? e.message : "Error al cargar el detalle");
+          setError(
+            e instanceof Error ? e.message : "Error al cargar el detalle"
+          );
         }
       } finally {
         if (!cancelado) setCargando(false);
@@ -34,6 +48,23 @@ export default function Detalle({ slug, onVolver, onAbrirCapitulo }: Props) {
       cancelado = true;
     };
   }, [slug]);
+
+  async function onToggleFav() {
+    if (!detalle) return;
+    if (!cargarSesion()) {
+      onPedirLogin?.();
+      return;
+    }
+    setFavLoading(true);
+    try {
+      const r = await alternarFavorito(detalle.id);
+      setDetalle({ ...detalle, es_favorito: r.es_favorito });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error al actualizar favorito");
+    } finally {
+      setFavLoading(false);
+    }
+  }
 
   if (cargando) {
     return (
@@ -60,7 +91,7 @@ export default function Detalle({ slug, onVolver, onAbrirCapitulo }: Props) {
   );
 
   function formatearCap(n: number) {
-    return Number.isInteger(n) ? n.toString() : n.toString();
+    return n.toString();
   }
 
   return (
@@ -83,18 +114,21 @@ export default function Detalle({ slug, onVolver, onAbrirCapitulo }: Props) {
             <p className="detalle-autor">Por {detalle.author}</p>
           )}
           <div className="detalle-chips">
-            {detalle.status && (
-              <span className="chip">{detalle.status}</span>
-            )}
-            <span className="chip">
-              {detalle.chapters.length} capítulos
-            </span>
+            {detalle.status && <span className="chip">{detalle.status}</span>}
+            <span className="chip">{detalle.chapters.length} capítulos</span>
             {detalle.genres?.slice(0, 4).map((g) => (
               <span key={g} className="chip chip-genre">
                 {g}
               </span>
             ))}
           </div>
+          <button
+            className={`btn-fav ${detalle.es_favorito ? "activo" : ""}`}
+            onClick={onToggleFav}
+            disabled={favLoading}
+          >
+            {detalle.es_favorito ? "★ En favoritos" : "☆ Añadir a favoritos"}
+          </button>
           {detalle.description && (
             <p className="detalle-desc">{detalle.description}</p>
           )}

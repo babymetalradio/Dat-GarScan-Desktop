@@ -1,6 +1,6 @@
 [package]
 name = "dat-garscan-desktop"
-version = "0.3.1"
+version = "0.4.0"
 description = "Dat-Gar Scan - Lector de mangas para escritorio"
 authors = ["Dat-Gar Scanlation"]
 edition = "2021"
